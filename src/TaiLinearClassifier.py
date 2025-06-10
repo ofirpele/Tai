@@ -21,15 +21,20 @@ class TaiLinearClassifier:
         ])
         
     def __str__(self):
-        return f'{type(self).__name__} where linear_classifier={self.linear_classifier}'
+        return f'{type(self).__name__}'
     
     def fit(self, X_train, y_train):
         self.clf.fit(X_train, y_train)
+
+    def cols_to_remove(self):
+        return self.taiSpecialFeaturesTransformer.cols_to_remove()
+    
+    def cols_to_include(self):
+       return self.taiSpecialFeaturesTransformer.cols_to_include()
 
     def predict(self, X):
         return self.clf.predict(X)
     
     def predict_proba(self, X):
         return self.clf.predict_proba(X)
-
    

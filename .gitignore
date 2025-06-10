@@ -1,0 +1,14 @@
+tmp_cb_model.json 
+venv
+mypy_cache
+pytest_cache
+ruff_cache
+.tox
+build
+reports
+archive
+dist
+.coverage
+main.log
+**/*.egg-info
+**/__pycache__

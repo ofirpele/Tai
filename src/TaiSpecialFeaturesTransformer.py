@@ -6,9 +6,15 @@ import numpy as np
 # - The non-nan is mapped to 1
 class TaiSpecialFeaturesTransformer:
 
+    def __init__(self):
+        self._cols_to_remove = None
+        self._cols_one_nan_one_not_nan = None
+        self._num_cols = None
+
     def fit(self, X_train, _=None):
-        self.cols_to_remove = []
-        self.cols_one_nan_one_not_nan = []
+        self._num_cols = X_train.shape[1]
+        self._cols_to_remove = []
+        self._cols_one_nan_one_not_nan = []
         for col_num in range(X_train.shape[1]):
             
             is_there_nan = False
@@ -29,22 +35,32 @@ class TaiSpecialFeaturesTransformer:
             if is_there_nan:
                 if not is_there_at_least_one_value_not_nan:
                     # only nans
-                    self.cols_to_remove.append(col_num)
+                    self._cols_to_remove.append(col_num)
                 elif not is_there_at_least_two_values_not_nan:
-                    self.cols_one_nan_one_not_nan.append(col_num)                    
+                    self._cols_one_nan_one_not_nan.append(col_num)                    
             elif not is_there_at_least_two_values_not_nan:
                 # only one value
-                self.cols_to_remove.append(col_num)
+                self._cols_to_remove.append(col_num)
         return self                
 
+    def cols_to_remove(self):
+        assert self._cols_to_remove is not None, "cols_to_remove called before fit"
+        return self._cols_to_remove
+
+    def cols_to_include(self):
+        assert self._num_cols is not None and self._cols_to_remove is not None, "cols_to_include called before fit"
+        cols = set(range(self._num_cols))
+        return list(cols.difference(self._cols_to_remove))
+
     def transform(self, X):
-        for col in self.cols_one_nan_one_not_nan:
+        assert self._cols_to_remove is not None and self._cols_one_nan_one_not_nan is not None, "transform called before fit"
+        for col in self._cols_one_nan_one_not_nan:
             for row in range(X.shape[0]):
                 if np.isnan(X[row, col]):
                     X[row, col] = 0
                 else:
                     X[row, col] = 1
-        return np.delete(X, self.cols_to_remove, axis=1)
+        return np.delete(X, self._cols_to_remove, axis=1)
 
 
 def test_1():
