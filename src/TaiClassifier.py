@@ -17,7 +17,7 @@ from classifier_unit.TFL import TFL
 class TaiClassifier:
     
     classifiers : list[Protocol]
-    
+     
     with_constraints_from_logistic_regression : bool = False
     logistic_regression_params_dict : dict[str, Any] = None
     
@@ -37,9 +37,15 @@ class TaiClassifier:
             self.combined_clf = TFL(catboost_init_dict={'random_seed' : 42, 'allow_writing_files' : False, 'silent' : True})
             
     def __str__(self):
-        res = f'{type(self).__name__}: ['
+        res = ''
+        if self.with_constraints_from_logistic_regression:
+            res += f'{type(self).__name__}: '
+        elif len(self.classifiers) > 1:
+            res += 'Ensemble: '
+        res += '['
         for clf in self.classifiers:
-            res += f' {type(clf).__name__}'
+            res += f'{type(clf).__name__} '
+        res = res[:-1] # remove last space
         res += ']'
         res += f' class_weight={self.class_weight}'
         if not self.with_constraints_from_logistic_regression:

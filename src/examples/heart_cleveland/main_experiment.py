@@ -124,6 +124,13 @@ experiment_shared_params = {
 # )
 # print(res_table[-1])
 
+clf = TaiLinearClassifier(linear_classifier=LogisticRegression(**logistic_regression_params_dict))
+experiment_auc(
+    clf,
+    **experiment_shared_params,
+    visualize_roc_curve_fig_line = dict(color='blue')
+)
+
 catboost_init_dict = {
     'random_seed' : 42,
     'allow_writing_files' : False,
@@ -132,9 +139,9 @@ catboost_init_dict = {
 
 tai_classifiers_arr = [
     #[classifier_unit.CatBoost(**catboost_init_dict)],
-    # [classifier_unit.XGB(random_state=42)],
+    [classifier_unit.XGB(random_state=42)],
     [classifier_unit.TFL(num_epochs=1, catboost_init_dict=catboost_init_dict)],
-    # [classifier_unit.XGB(random_state=42), classifier_unit.TFL(num_epochs=1, catboost_init_dict=catboost_init_dict)],
+    [classifier_unit.XGB(random_state=42), classifier_unit.TFL(num_epochs=1, catboost_init_dict=catboost_init_dict)],
 ]
 tai_classifiers_visualize_roc_curve_fig_line_colors = [
     'purple',
@@ -146,30 +153,30 @@ for tai_classifiers, tai_classifiers_visualize_roc_curve_fig_line_color in zip(t
     visualize_roc_curve_fig_line = {
         'color' : tai_classifiers_visualize_roc_curve_fig_line_color,
     }
+    visualize_roc_curve_fig_line['dash'] = 'dash'
+    experiment_auc(
+        TaiClassifier(with_constraints_from_logistic_regression=False, features_names=features_names, classifiers=tai_classifiers),
+        **experiment_shared_params,
+        visualize_roc_curve_fig_line = visualize_roc_curve_fig_line
+    )
+    visualize_roc_curve_fig_line.pop('dash')
     clf = TaiClassifier(with_constraints_from_logistic_regression=True, logistic_regression_params_dict=logistic_regression_params_dict, features_names=features_names, classifiers=tai_classifiers)
     experiment_auc(
         clf,
         **experiment_shared_params,
         visualize_roc_curve_fig_line = visualize_roc_curve_fig_line
     )
-    # print(res_table[-1])
-    # visualize_roc_curve_fig_line['dash'] = 'dash'
-    # experiment_auc(
-    #     TaiClassifier(with_constraints_from_logistic_regression=False, features_names=features_names, classifiers=tai_classifiers),
-    #     **experiment_shared_params,
-    #     visualize_roc_curve_fig_line = visualize_roc_curve_fig_line
-    # )
-    # print(res_table[-1])
+    
+# open_mode = 'wb+'
+# import os, pickle
+# MODEL_FILENAME = 'TaiClassifier_TFL.pkl'
+# with open(MODEL_FILENAME, open_mode) as fp:
+#     pickle.dump(clf, fp, pickle.HIGHEST_PROTOCOL)
 
-    open_mode = 'wb+'
-    import os, pickle
-    MODEL_FILENAME = 'TaiClassifier_TFL.pkl'
-    with open(MODEL_FILENAME, open_mode) as fp:
-        pickle.dump(clf, fp, pickle.HIGHEST_PROTOCOL)
-
-df_res = pd.DataFrame(res_table, columns=['Classifier', 'Train AUC%', 'Test AUC%'])
-print('==================================================================')
-print(df_res.to_string(index=False))
+ccol = f'Classifier{"":45}'
+df_res = pd.DataFrame(res_table, columns=[ccol, 'Train AUC%', 'Test AUC%'])
+print()
+print(df_res.to_string(index=False, formatters={ccol: lambda x: f'{x:<55}'}))
 
 roc_curve_fig.show()
 ########################################################################################################################

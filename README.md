@@ -1,6 +1,5 @@
 # Trustworthy AI
 
-**Version:** 0.1.0  
 **Author:** Ofir Pele (ofirpele@gmail.com)
 
 ## Overview
@@ -23,33 +22,28 @@ This tool can provide valuable insights, as demonstrated here:
 
 This example shows that even when all features except unit tests are at their worst values for health, the probability of the code being healthy remains very high due to the presence of unit tests. This provides yet another proof that unit tests are important! 🙂
 
-## Getting Started
-
-To begin using Tai, please refer to the Install and Run sections below.
-
 ## Installation
 
-**Prerequisites:** Python 3.12.4 must be installed on your machine. (You can try changing the version in `pyproject.toml`, but compatibility is not guaranteed.)
-
-**Important:** All commands should be run from the project root directory.
+- All commands should be run from the project root directory. 
+- If uv is not installed the install script will try to install it via pip.
+- If python is also not installed, the install script will try to install it assuming windows. 
 
 ```bash
 source install.sh
-source venv/Scripts/activate
 ```
 
 ## Running the Application
 
-To run any of the available experiments, source the corresponding `run_` files. 
+Use uv run to run any of the examples:
 
 **Example 1:** To run the code quality experiment:
 ```bash
-source run_code_quality_experiment.sh
+uv run src/examples/code_quality/main_experiment.py
 ```
 
-**Example 2:** To run the code quality visualization tool:
+**Example 2:** To run the code quality visualization tool :
 ```bash
-source run_code_quality_visualization.sh
+uv run src/examples/code_quality/main_app_predicition_lens.py
 ```
 
 ## Data Access

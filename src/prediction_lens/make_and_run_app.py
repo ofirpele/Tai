@@ -11,6 +11,9 @@ from TaiClassifier import TaiClassifier
 
 from typing import Any
 
+import webbrowser
+import socket
+
 def make_and_run_app(
         clf : TaiClassifier, 
         y_vis : int, 
@@ -25,7 +28,7 @@ def make_and_run_app(
         max_slider_tics : int = 50,
         run_params : dict[str,Any] = {'debug' : True}
         ):
-    
+
     APP_NAME = 'Tai Prediction Lens'
 
     assert y_vis in [0, 1]
@@ -36,7 +39,8 @@ def make_and_run_app(
     BACKGROUND_COLOR = '#121212'  # Dark
     TEXT_COLOR = '#FFFFFF'  # White 
     PURPLE_COLOR = '#BB86FC'  
-    TEAL_COLOR = '#03DAC6'  
+    TEAL_COLOR = '#03DAC6'    
+
     FONT_FAMILY = "'Roboto', 'Segoe UI', 'Helvetica Neue', sans-serif"
     
     NEGATIVE_COLOR = '#FF5252'  # Red
@@ -167,11 +171,11 @@ def make_and_run_app(
                     padding: 20px;
                 }
                 .rc-slider-track {
-                    background-color: ''' + PURPLE_COLOR + ''';
+                    background-color: #888888;
                 }
                 .rc-slider-handle {
-                    border-color: ''' + TEAL_COLOR + ''';
-                    background-color: ''' + TEAL_COLOR + ''';
+                    border-color: #777777;
+                    background-color: ''' + NEUTRAL_COLOR + ''';
                 }
                 .rc-slider-rail {
                     background-color: #333333;
@@ -230,7 +234,7 @@ def make_and_run_app(
                 'overflowX': 'hidden'
             }),
             
-            # Right side: Probability bar
+            # Right side: Probability bar + loading
             html.Div([
                 html.Div([
                     # html.H2(proba_y_vis_name, style={
@@ -248,7 +252,12 @@ def make_and_run_app(
                             'borderRadius': '8px',
                             'overflow': 'hidden'
                         }
-                    )
+                    ),
+                    dcc.Loading(
+                        id="loading",
+                        type="default",
+                        children=html.Div(id="loading-output"),
+                    ),
                 ], style={
                     'backgroundColor': '#1E1E1E',
                     'borderRadius': '12px',
@@ -325,11 +334,12 @@ def make_and_run_app(
         return (clf.predict_proba(X).squeeze()[y_vis]).item()
 
     callback_inputs = [Input(f_name, 'value') for f_name in clf.active_features_names]
-
-    @app.callback([Output(f'{delta_proba_name}{f_name}', 'figure') for f_name in clf.active_features_names], callback_inputs)
+    callback_outputs = [Output(f'{delta_proba_name}{f_name}', 'figure') for f_name in clf.active_features_names]
+    callback_outputs.append(Output('loading-output', 'children'))
+    @app.callback(callback_outputs, callback_inputs)
     def update_delta_proba_figures(*args):
         X = create_X_from_args(num_update_delta_proba_figures_steps, *args)
-        
+
         res = []
         for col, f_min, f_max, f_vis_x_axis_min, f_vis_x_axis_max, f_is_only_min_and_max, f_vis_name in zip(
             clf.features_transformer.cols_to_include(),
@@ -341,6 +351,7 @@ def make_and_run_app(
             features_vis_name
         ):
             X_col_orig = copy.deepcopy(X[:, col])
+            col_x_val = X_col_orig[0]
 
             X[:, col] = np.linspace(f_min, f_max, num=num_update_delta_proba_figures_steps)
             
@@ -353,6 +364,15 @@ def make_and_run_app(
             df_res = pd.DataFrame(df_mat, columns=xy)
             
             fig = go.Figure()
+            scatter_shared_params = {
+                'mode' : 'markers',
+                'showlegend' : False,
+                'hovertemplate' : 
+                    '\u0394' + proba_y_vis_name + ':%{y:.2f}' +
+                    '<br>' + 
+                    f_vis_name + ': %{x:.2f}' + 
+                    '<extra></extra>',
+            }
             
             i_vals = [0, len(df_res)-1] if f_is_only_min_and_max else range(len(df_res))
             for i in i_vals:
@@ -368,29 +388,30 @@ def make_and_run_app(
                 else:  
                     line_color = NEUTRAL_COLOR
                 
-                scatter_shared_params = {
-                    'x' : [x_curr],
-                    'y' : [y_curr],
-                    'mode' : 'markers',
-                    'marker_color' : line_color,
-                    'showlegend' : False,
-                    'hovertemplate' : 
-                        '\u0394' + proba_y_vis_name + ':%{y:.2f}' +
-                        '<br>' + 
-                        f_vis_name + ': %{x:.2f}' + 
-                        '<extra></extra>',
-                }
+                scatter_shared_params['x'] =[x_curr]
+                scatter_shared_params['y'] =[y_curr]
+                scatter_shared_params['marker_color'] = line_color
+
                 if f_is_only_min_and_max:                  
                     fig.add_trace(go.Scatter(
                         marker_size = 7,
                         **scatter_shared_params                      
-                ))
+                    ))
                 else:
                     fig.add_trace(go.Scatter(                        
                         marker_size=4,
                         marker_symbol='square',
                         **scatter_shared_params
-                    ))
+                    ))                
+
+            scatter_shared_params['x'] =[col_x_val]
+            scatter_shared_params['y'] =[0]
+            scatter_shared_params['marker_color'] = NEUTRAL_COLOR
+            fig.add_trace(go.Scatter(
+                marker_size = 14,
+                marker_symbol='x',
+                **scatter_shared_params
+            ))      
 
             xaxis = {
                 'gridcolor': '#333333',
@@ -417,6 +438,8 @@ def make_and_run_app(
             res.append(fig)
             
             X[:, col] = X_col_orig
+
+        res.append(None) # for the loading
         return res
 
     @app.callback(Output(proba_y_vis_name, 'figure'), callback_inputs)
@@ -468,7 +491,29 @@ def make_and_run_app(
         )
         
         return fig
-    
-    print('Click here: http://127.0.0.1:8050/')
+    ##############################################################################################################################
+
+    app_port = run_params.get('port', 8050)
+    app_url_addr = '127.0.0.1'
+    app_url = f'http://{app_url_addr}:{app_port}'
+    # Check and print only once globally
+    def is_port_in_use():
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind((app_url_addr, app_port))
+                return False
+            except OSError:
+                return True
+    # Only print and open browser if port 8050 is not already in use
+    if not is_port_in_use():
+        webbrowser.open_new_tab(app_url)
+        print()
+        print('==========================================================================')
+        print('Opened a new tab in your browser at:')
+        print(app_url)
+        print('If it did not open, click or ctrl+click or copy paste into browser')
+        print('==========================================================================')
+        print()        
+
     app.run(**run_params)
     return app

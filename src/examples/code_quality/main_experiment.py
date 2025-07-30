@@ -14,7 +14,7 @@ import classifier_unit
 from experiment_auc import experiment_auc
 ########################################################################################################################
 
-from .config import MERGED_DATA_FILE
+from config import MERGED_DATA_FILE
 from examples.code_quality.CategoricalFeaturesUtils import CategoricalFeaturesUtils
 
 SAVE_TEST_WITH_GIT_LABEL = False
@@ -147,15 +147,16 @@ for tai_classifiers, tai_classifiers_visualize_roc_curve_fig_line_color in zip(t
     visualize_roc_curve_fig_line = {
         'color' : tai_classifiers_visualize_roc_curve_fig_line_color,
     }
-    clf = TaiClassifier(with_constraints_from_logistic_regression=True, logistic_regression_params_dict=logistic_regression_params_dict, features_names=features_names, classifiers=tai_classifiers)
-    experiment_auc(
-        clf,
-        **experiment_shared_params,
-        visualize_roc_curve_fig_line = visualize_roc_curve_fig_line
-    )
     visualize_roc_curve_fig_line['dash'] = 'dash'
     experiment_auc(
         TaiClassifier(with_constraints_from_logistic_regression=False, features_names=features_names, classifiers=tai_classifiers),
+        **experiment_shared_params,
+        visualize_roc_curve_fig_line = visualize_roc_curve_fig_line
+    )
+    visualize_roc_curve_fig_line.pop('dash')
+    clf = TaiClassifier(with_constraints_from_logistic_regression=True, logistic_regression_params_dict=logistic_regression_params_dict, features_names=features_names, classifiers=tai_classifiers)
+    experiment_auc(
+        clf,
         **experiment_shared_params,
         visualize_roc_curve_fig_line = visualize_roc_curve_fig_line
     )
@@ -168,11 +169,10 @@ for tai_classifiers, tai_classifiers_visualize_roc_curve_fig_line_color in zip(t
 # with open(filename, open_mode) as fp:
 #     pickle.dump(clf, fp, pickle.HIGHEST_PROTOCOL)
 
-df_res = pd.DataFrame(res_table, columns=['Classifier', 'Train AUC%', 'Test AUC%'])
-print(df_res.to_string(index=False))
+ccol = f'Classifier{"":45}'
+df_res = pd.DataFrame(res_table, columns=[ccol, 'Train AUC%', 'Test AUC%'])
+print()
+print(df_res.to_string(index=False, formatters={ccol: lambda x: f'{x:<55}'}))
 
 roc_curve_fig.show()
-
-# exit()
-
 ########################################################################################################################
