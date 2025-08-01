@@ -318,27 +318,31 @@ def make_and_run_app(
     #########################################################################################
 
     ##############################################################################################################################
-    # Callbacks for dynamic functionality
+    # helper functions
     ##############################################################################################################################
-    def create_X_from_args(num_rows, *args):
+    def create_X(num_rows, *x_args):
         num_all_features = len(clf.features_transformer.cols_to_include()) + len(clf.features_transformer.cols_to_remove())
         X = np.empty((num_rows, num_all_features))
         ci = 0
-        for val in args:
+        for ci, val in enumerate(x_args):
             X[:, clf.features_transformer.cols_to_include()[ci]].fill(val)
-            ci += 1
         return X
     
-    def curr_proba_val(*args):
-        X = create_X_from_args(1, *args)
+    def proba_y_vis(*x_args):
+        X = create_X(1, *x_args)
         return (clf.predict_proba(X).squeeze()[y_vis]).item()
-
-    callback_inputs = [Input(f_name, 'value') for f_name in clf.active_features_names]
-    callback_outputs = [Output(f'{delta_proba_name}{f_name}', 'figure') for f_name in clf.active_features_names]
-    callback_outputs.append(Output('loading-output', 'children'))
-    @app.callback(callback_outputs, callback_inputs)
-    def update_delta_proba_figures(*args):
-        X = create_X_from_args(num_update_delta_proba_figures_steps, *args)
+    ##############################################################################################################################
+    
+    ##############################################################################################################################
+    # Callbacks for dynamic functionality
+    ##############################################################################################################################    
+    callback_x_inputs = [Input(f_name, 'value') for f_name in clf.active_features_names]
+    
+    callback_update_delta_proba_figures_outputs = [Output(f'{delta_proba_name}{f_name}', 'figure') for f_name in clf.active_features_names]
+    callback_update_delta_proba_figures_outputs.append(Output('loading-output', 'children'))
+    @app.callback(callback_update_delta_proba_figures_outputs, callback_x_inputs)
+    def update_delta_proba_figures(*x_args):
+        X = create_X(num_update_delta_proba_figures_steps, *x_args)
 
         res = []
         for col, f_min, f_max, f_vis_x_axis_min, f_vis_x_axis_max, f_is_only_min_and_max, f_vis_name in zip(
@@ -359,7 +363,7 @@ def make_and_run_app(
             
             df_mat = np.empty((num_update_delta_proba_figures_steps, 2))
             df_mat[:, 0] = X[:, col]
-            df_mat[:, 1] = func_vals - curr_proba_val(*args)
+            df_mat[:, 1] = func_vals - proba_y_vis(*x_args)
             xy = ['', delta_proba_name]
             df_res = pd.DataFrame(df_mat, columns=xy)
             
@@ -374,8 +378,8 @@ def make_and_run_app(
                     '<extra></extra>',
             }
             
-            i_vals = [0, len(df_res)-1] if f_is_only_min_and_max else range(len(df_res))
-            for i in i_vals:
+            x_i_vals = [0, len(df_res)-1] if f_is_only_min_and_max else range(len(df_res))
+            for i in x_i_vals:
                 
                 x_curr = df_res[xy[0]][i]
                 y_curr = df_res[xy[1]][i]
@@ -427,12 +431,12 @@ def make_and_run_app(
                 paper_bgcolor=BACKGROUND_COLOR,
                 plot_bgcolor='#1E1E1E',
                 font=dict(family=FONT_FAMILY, color=TEXT_COLOR),
+                xaxis=xaxis,
                 yaxis=dict(
                     gridcolor='#333333',
                     zerolinecolor='#444444',
                     range=[-1, 1]
                 ),
-                xaxis=xaxis,                
             )
             
             res.append(fig)
@@ -442,19 +446,19 @@ def make_and_run_app(
         res.append(None) # for the loading
         return res
 
-    @app.callback(Output(proba_y_vis_name, 'figure'), callback_inputs)
-    def update_proba_figure(*args):
-        current_prob = curr_proba_val(*args)
-        current_prob = max(0, min(current_prob, 1))
+    @app.callback(Output(proba_y_vis_name, 'figure'), callback_x_inputs)
+    def update_proba_figure(*x_args):
+        current_proba = proba_y_vis(*x_args)
+        current_proba = max(0, min(current_proba, 1))
 
         fig = go.Figure()
         
         fig.add_trace(go.Bar(
             x=[''],
-            y=[current_prob],
+            y=[current_proba],
             marker=dict(
                 color=[
-                    f'rgba({51}, {196}, {173}, {current_prob:.3f})',  # Base on TEAL_COLOR with transparency
+                    f'rgba({51}, {196}, {173}, {current_proba:.3f})',  # Base on TEAL_COLOR with transparency
                 ],                
                 line=dict(width=0)
             ),
@@ -465,8 +469,8 @@ def make_and_run_app(
         # Add current probability text annotation
         fig.add_annotation(
             x=0,
-            y=current_prob + 0.05,
-            text=f'{proba_y_vis_name}={current_prob:.3f}',
+            y=current_proba + 0.05,
+            text=f'{proba_y_vis_name}={current_proba:.3f}',
             showarrow=False,
             font=dict(
                 family=FONT_FAMILY,
@@ -493,11 +497,12 @@ def make_and_run_app(
         return fig
     ##############################################################################################################################
 
+    ##############################################################################################################################
     app_port = run_params.get('port', 8050)
     app_url_addr = '127.0.0.1'
     app_url = f'http://{app_url_addr}:{app_port}'
-    # Check and print only once globally
-    def is_port_in_use():
+    
+    def is_app_port_in_use():
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
                 s.bind((app_url_addr, app_port))
@@ -505,7 +510,72 @@ def make_and_run_app(
             except OSError:
                 return True
     # Only print and open browser if port 8050 is not already in use
-    if not is_port_in_use():
+    if not is_app_port_in_use():
+        print()
+        print('==========================================================================')
+        x_for_min = []
+        x_for_max = []
+        max_len_of_vis_name = 0
+        for f_vis_name, f_min, f_max, f_monotone in zip(
+            features_vis_name,
+            clf.linear_clf_for_monotone_constraints.scaler.data_min_,
+            clf.linear_clf_for_monotone_constraints.scaler.data_max_,
+            clf.monotone_constraints
+            ):
+            f_monotone *= (+1 if y_vis==1 else -1)
+            if f_monotone == +1:
+                x_for_min.append(f_min)
+                x_for_max.append(f_max)                
+            else:
+                x_for_min.append(f_max)
+                x_for_max.append(f_min)
+            max_len_of_vis_name = max(max_len_of_vis_name, len(f_vis_name))
+                
+        global_min = proba_y_vis(*x_for_min)
+        global_max = proba_y_vis(*x_for_max)
+        min_proba_y_vis_name = f'min({proba_y_vis_name})'
+        max_proba_y_vis_name = f'max({proba_y_vis_name})'
+        print(f'{min_proba_y_vis_name} = {global_min:.2f}')
+        print(f'{max_proba_y_vis_name} = {global_max:.2f}')
+        print()
+        for g_i, (f_vis_name, f_min, f_max, f_monotone) in enumerate(zip(
+            features_vis_name,
+            clf.linear_clf_for_monotone_constraints.scaler.data_min_,
+            clf.linear_clf_for_monotone_constraints.scaler.data_max_,
+            clf.monotone_constraints
+            )):
+
+            if f_monotone == 0:
+                print(f'{f_vis_name:<{max_len_of_vis_name+1}} is not monotone up or down so max increase or decrease are not supported')
+                continue
+
+            f_monotone *= (+1 if y_vis==1 else -1)
+            if f_monotone == -1:
+                f_vis_name += '\u25BC'
+            else:
+                f_vis_name += '\u25B2'
+
+            print(f'{f_vis_name:<{max_len_of_vis_name+1}} max increase from {min_proba_y_vis_name} is: ', end='')
+            f_x = x_for_min[g_i]
+            if f_monotone == +1:
+                x_for_min[g_i] = f_max
+            else:
+                x_for_min[g_i] = f_min
+            print(f'{proba_y_vis(*x_for_min) - global_min:.2f}')
+            x_for_min[g_i] = f_x
+            
+            print(f'{f_vis_name:<{max_len_of_vis_name+1}} max decrease from {max_proba_y_vis_name} is: ', end='')
+            f_x = x_for_max[g_i]
+            if f_monotone == +1:
+                x_for_max[g_i] = f_min
+            else:
+                x_for_max[g_i] = f_max
+            print(f'{global_max -  proba_y_vis(*x_for_max):.2f}')
+            x_for_max[g_i] = f_x
+
+        print('==========================================================================')
+        print()
+
         webbrowser.open_new_tab(app_url)
         print()
         print('==========================================================================')
@@ -513,7 +583,8 @@ def make_and_run_app(
         print(app_url)
         print('If it did not open, click or ctrl+click or copy paste into browser')
         print('==========================================================================')
-        print()        
+        print()
+    ##############################################################################################################################
 
     app.run(**run_params)
     return app
