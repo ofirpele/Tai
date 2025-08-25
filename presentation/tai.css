@@ -1,0 +1,158 @@
+/* @theme tai */
+
+/*
+based on: 
+https://github.com/rainbowflesh/Rose-Pine-For-Marp/blob/master/css/rose-pine.css
+*/
+
+@import 'gaia';
+@import "schema";
+@import "structure";
+
+:root {
+    --base: #191724;
+    --surface: #1f1d2e;
+    --overlay: #26233a;
+    --muted: #6e6a86;
+    --subtle: #908caa;
+    --text: #e0def4;
+    --love: #eb6f92;
+    --gold: #f6c177;
+    --rose: #ebbcba;
+    --pine: #31748f;
+    --foam: #9ccfd8;
+    --iris: #c4a7e7;
+    --turquoise: #53cdcb; 
+    --highlight-low: #21202e;
+    --highlight-muted: #403d52;
+    --highlight-high: #524f67;
+
+    font-family: Roboto, Segoe UI, Helvetica Neue, sans-serif; /*Pier Sans, ui-sans-serif, system-ui, -apple-system,
+        BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans,
+        sans-serif, "Apple Color Emoji", "Segoe UI Emoji", Segoe UI Symbol,
+        "Noto Color Emoji";*/
+    font-weight: initial;
+
+    background-color: var(--base);
+}
+
+/* Common style */
+section.centered {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+.cols {
+    display: flex;
+    justify-content: space-between;
+}
+.col {
+	width: calc(100%);
+}
+h1 {
+    color: var(--turquoise);
+    padding-bottom: 2mm;
+    margin-bottom: 12mm;
+    text-align: center;
+}
+h2 {
+    color: var(--turquoise);
+    text-align: center;
+}
+h3 {
+    color: var(--turquoise);
+    text-align: center;
+}
+h4 {
+    color: var(--turquoise);
+    text-align: center;
+}
+h5 {
+    color: var(--turquoise);
+    text-align: center;
+}
+h6 {
+    color: var(--turquoise);
+    text-align: center;
+}
+a {
+    color: var(--iris);
+}
+p {
+    font-size: 20pt;
+    font-weight: 600;
+    color: var(--text);
+}
+code {
+    color: var(--text);
+    background-color: var(--highlight-muted);
+}
+text {
+    color: var(--text);
+}
+ul {
+    color: var(--text);
+}
+li {
+    color: var(--text);
+}
+img {
+    background-color: var(--highlight-low);
+}
+strong {
+    color: var(--text);
+    font-weight: inherit;
+    font-weight: 800;
+}
+mjx-container {
+    color: var(--text);
+}
+marp-pre {
+    background-color: var(--overlay);
+    border-color: var(--highlight-high);
+}
+
+/* Code blok */
+.hljs-comment {
+    color: var(--muted);
+}
+.hljs-attr {
+    color: var(--foam);
+}
+.hljs-punctuation {
+    color: var(--subtle);
+}
+.hljs-string {
+    color: var(--gold);
+}
+.hljs-title {
+    color: var(--foam);
+}
+.hljs-keyword {
+    color: var(--pine);
+}
+.hljs-variable {
+    color: var(--text);
+}
+.hljs-literal {
+    color: var(--rose);
+}
+.hljs-type {
+    color: var(--love);
+}
+.hljs-number {
+    color: var(--gold);
+}
+.hljs-built_in {
+    color: var(--love);
+}
+.hljs-params {
+    color: var(--iris);
+}
+.hljs-symbol {
+    color: var(--foam);
+}
+.hljs-meta {
+    color: var(--subtle);
+}

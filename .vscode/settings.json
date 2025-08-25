@@ -1,0 +1,12 @@
+{
+    "markdown.marp.themes": [      
+      "presentation/tai.css"
+    ],
+    "cSpell.words": [
+      "approximator",
+      "interpretability",
+      "Liat",
+      "Ofir",
+      "unimodal"
+    ]
+}
