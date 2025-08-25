@@ -1,4 +1,4 @@
-# Trustworthy AI
+# Tai: Trustworthy AI 
 
 **Author:** Ofir Pele (ofirpele@gmail.com)
 
@@ -48,8 +48,8 @@ uv run src/examples/code_quality/main_app_predicition_lens.py
 
 ## Data Access
 
-Please note that the `examples/alzheimers_disease/data` and `examples/heart_cleveland/data` folders do not contain the actual data files. However, each folder includes a `README.md` file with links to access the required datasets.
+Please note that the `examples/alzheimers_disease/data/` and `examples/heart_cleveland/data/` folders do not contain the actual data files. However, each folder includes a `README.md` file with links to access the required datasets.
 
 ## More Information
 
-See <a href="https://raw.githubusercontent.com/ofirpele/tai/main/presentation/presentation.html">presentation</a>
+See <a href="./presentation/presentation.pdf">presentation.pdf</a> or clone repo and open `presentation/presentation.html` in your favorite browser.
